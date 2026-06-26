@@ -68,6 +68,16 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/")
+def root() -> dict[str, str]:
+    return {
+        "message": "CodeVector Products API",
+        "health": "/health",
+        "products": "/products?limit=25",
+        "docs": "/docs",
+    }
+
+
 @app.get("/categories")
 def categories() -> dict[str, list[str]]:
     with get_conn() as conn:
