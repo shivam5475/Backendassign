@@ -1,31 +1,32 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
 
+import psycopg
 from psycopg import Connection
 from psycopg.rows import dict_row
-from psycopg_pool import ConnectionPool
 
 from app.config import settings
 
 
-pool = ConnectionPool(
-    conninfo=settings.database_url,
-    min_size=1,
-    max_size=10,
-    kwargs={"row_factory": dict_row},
-    open=False,
-)
+class DatabaseNotConfigured(RuntimeError):
+    pass
+
+
+def _database_url() -> str:
+    if settings.database_url is None:
+        raise DatabaseNotConfigured("DATABASE_URL is not configured")
+    return settings.database_url
 
 
 def open_pool() -> None:
-    pool.open()
+    return None
 
 
 def close_pool() -> None:
-    pool.close()
+    return None
 
 
 @contextmanager
 def get_conn() -> Iterator[Connection]:
-    with pool.connection() as conn:
+    with psycopg.connect(_database_url(), row_factory=dict_row) as conn:
         yield conn

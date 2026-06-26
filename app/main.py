@@ -4,9 +4,10 @@ from uuid import UUID
 
 from fastapi import FastAPI, HTTPException, Query, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from app.db import close_pool, get_conn, open_pool
+from app.db import DatabaseNotConfigured, close_pool, get_conn, open_pool
 
 
 MAX_LIMIT = 100
@@ -55,12 +56,22 @@ class ProductUpdate(BaseModel):
 
 @app.on_event("startup")
 def startup() -> None:
-    open_pool()
+    try:
+        open_pool()
+    except DatabaseNotConfigured:
+        pass
 
 
 @app.on_event("shutdown")
 def shutdown() -> None:
     close_pool()
+
+
+@app.exception_handler(DatabaseNotConfigured)
+def database_not_configured_handler(
+    _request: object, exc: DatabaseNotConfigured
+) -> JSONResponse:
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
 @app.get("/health")
@@ -116,9 +127,9 @@ def list_products(
                 version_id
             FROM product_versions
             WHERE version_id <= %(snapshot)s
-              AND (%(cursor)s IS NULL OR version_id < %(cursor)s)
+              AND (%(cursor)s::bigint IS NULL OR version_id < %(cursor)s::bigint)
               AND (visible_until IS NULL OR visible_until > %(snapshot)s)
-              AND (%(category)s IS NULL OR category = %(category)s)
+              AND (%(category)s::text IS NULL OR category = %(category)s::text)
             ORDER BY version_id DESC
             LIMIT %(limit_plus_one)s
             """,
