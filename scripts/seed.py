@@ -33,7 +33,7 @@ def main() -> None:
                     SELECT
                         gen_random_uuid() AS id,
                         'Product ' || gs::text AS name,
-                        categories[(gs % array_length(categories, 1)) + 1] AS category,
+                        categories[(gs %% array_length(categories, 1)) + 1] AS category,
                         round((5 + random() * 995)::numeric, 2) AS price,
                         now()
                             - ((random() * 120)::int || ' days')::interval
