@@ -1,12 +1,14 @@
 import argparse
+import sys
 from pathlib import Path
 
 import psycopg
 
-from app.config import settings
-
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from app.config import settings
 
 
 def main() -> None:
